@@ -1,0 +1,39 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+<ItemGroup>
+    <Compile Remove="Aggregates\**" />
+    <Compile Remove="Events\**" />
+    <Compile Remove="Factories\**" />
+    <Compile Remove="SeedWork\**" />
+    <Compile Remove="Services\**" />
+    <Compile Remove="Specifications\**" />
+    <EmbeddedResource Remove="Aggregates\**" />
+    <EmbeddedResource Remove="Events\**" />
+    <EmbeddedResource Remove="Factories\**" />
+    <EmbeddedResource Remove="SeedWork\**" />
+    <EmbeddedResource Remove="Services\**" />
+    <EmbeddedResource Remove="Specifications\**" />
+    <None Remove="Aggregates\**" />
+    <None Remove="Events\**" />
+    <None Remove="Factories\**" />
+    <None Remove="SeedWork\**" />
+    <None Remove="Services\**" />
+    <None Remove="Specifications\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FluentValidation" Version="11.9.0" />
+    <PackageReference Include="Nethereum.Web3" Version="4.19.0" />
+  </ItemGroup>
+
+  <ItemGroup>								 							
+    <Folder Include="ValueObjects\" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,44 @@
+name: Deploy Brickle QA
+
+on:
+  push:
+    branches:
+      - develop
+
+env:
+  AZURE_API_NAME: "BRICKLE-APP-SERVICE"
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Paso 1: Clonar el repositorio
+      - name: Checkout del código
+        uses: actions/checkout@v3
+
+      # Paso 2: Configurar .NET Core SDK
+      - name: Configurar .NET Core SDK
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: "8.x" # Especifica la versión de .NET Core 8
+
+      # Paso 3: Restaurar dependencias
+      - name: Restaurar dependencias
+        run: dotnet restore
+
+      # Paso 4: Construir la aplicación
+      - name: Construir la aplicación
+        run: dotnet build --configuration Release --no-restore
+
+      # Paso 5: Publicar la aplicación
+      - name: Publicar la aplicación
+        run: dotnet publish ./src/BricklePlatform.Api/BricklePlatform.Api.csproj -c Release -o ./publish
+
+      # Paso 6: Desplegar en Azure App Service
+      - name: Desplegar en Azure App Service
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: "BRICKLE-APP-SERVICE"
+          publish-profile: ${{ secrets.AZURE_PUBLISH_PROFILE }}
+          package: ./publish

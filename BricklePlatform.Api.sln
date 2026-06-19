@@ -1,0 +1,55 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{60460330-B638-43E6-853A-145D57327DED}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BricklePlatform.Api", "src\BricklePlatform.Api\BricklePlatform.Api.csproj", "{7B69DCBD-ACFF-4B63-98D3-39CAD78385BA}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BricklePlatform.Domain", "src\BricklePlatform.Domain\BricklePlatform.Domain.csproj", "{6E76DC57-690E-49C3-92CE-36869E3709FE}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BricklePlatform.Infrastructure", "src\BricklePlatform.Infrastructure\BricklePlatform.Infrastructure.csproj", "{B0171FA5-D8F6-4F27-905B-0AC1612FA56D}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{92CF7E97-54A4-44CF-90B2-65332143769D}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "deploy", "deploy", "{36834C59-5DC9-45AA-80DD-920E322B2CB5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BricklePlatform.Test", "test\BricklePlatform.Test\BricklePlatform.Test.csproj", "{4D9532DB-E3AF-4C8F-979E-624A2E7C7FF7}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{7B69DCBD-ACFF-4B63-98D3-39CAD78385BA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7B69DCBD-ACFF-4B63-98D3-39CAD78385BA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7B69DCBD-ACFF-4B63-98D3-39CAD78385BA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7B69DCBD-ACFF-4B63-98D3-39CAD78385BA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6E76DC57-690E-49C3-92CE-36869E3709FE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6E76DC57-690E-49C3-92CE-36869E3709FE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6E76DC57-690E-49C3-92CE-36869E3709FE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6E76DC57-690E-49C3-92CE-36869E3709FE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B0171FA5-D8F6-4F27-905B-0AC1612FA56D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B0171FA5-D8F6-4F27-905B-0AC1612FA56D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B0171FA5-D8F6-4F27-905B-0AC1612FA56D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B0171FA5-D8F6-4F27-905B-0AC1612FA56D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4D9532DB-E3AF-4C8F-979E-624A2E7C7FF7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4D9532DB-E3AF-4C8F-979E-624A2E7C7FF7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4D9532DB-E3AF-4C8F-979E-624A2E7C7FF7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4D9532DB-E3AF-4C8F-979E-624A2E7C7FF7}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{7B69DCBD-ACFF-4B63-98D3-39CAD78385BA} = {60460330-B638-43E6-853A-145D57327DED}
+		{6E76DC57-690E-49C3-92CE-36869E3709FE} = {60460330-B638-43E6-853A-145D57327DED}
+		{B0171FA5-D8F6-4F27-905B-0AC1612FA56D} = {60460330-B638-43E6-853A-145D57327DED}
+		{4D9532DB-E3AF-4C8F-979E-624A2E7C7FF7} = {92CF7E97-54A4-44CF-90B2-65332143769D}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {C3456D66-C327-490B-A843-06A05ABAC818}
+	EndGlobalSection
+EndGlobal

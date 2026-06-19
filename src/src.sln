@@ -1,0 +1,36 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.2.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BricklePlatform.Api", "BricklePlatform.Api\BricklePlatform.Api.csproj", "{4D5D3A9A-73DE-61CF-F915-C89DB907DA9D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BricklePlatform.Domain", "BricklePlatform.Domain\BricklePlatform.Domain.csproj", "{F51B308D-9834-7C74-CB1D-8475E69EEC25}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BricklePlatform.Infrastructure", "BricklePlatform.Infrastructure\BricklePlatform.Infrastructure.csproj", "{24E3DE71-F18A-9DB8-23EF-FF4A3AA046AB}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{4D5D3A9A-73DE-61CF-F915-C89DB907DA9D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4D5D3A9A-73DE-61CF-F915-C89DB907DA9D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4D5D3A9A-73DE-61CF-F915-C89DB907DA9D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4D5D3A9A-73DE-61CF-F915-C89DB907DA9D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F51B308D-9834-7C74-CB1D-8475E69EEC25}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F51B308D-9834-7C74-CB1D-8475E69EEC25}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F51B308D-9834-7C74-CB1D-8475E69EEC25}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F51B308D-9834-7C74-CB1D-8475E69EEC25}.Release|Any CPU.Build.0 = Release|Any CPU
+		{24E3DE71-F18A-9DB8-23EF-FF4A3AA046AB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{24E3DE71-F18A-9DB8-23EF-FF4A3AA046AB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{24E3DE71-F18A-9DB8-23EF-FF4A3AA046AB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{24E3DE71-F18A-9DB8-23EF-FF4A3AA046AB}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {AF7AB2B9-55F6-4D5B-8EF5-FBE2D0993A83}
+	EndGlobalSection
+EndGlobal
