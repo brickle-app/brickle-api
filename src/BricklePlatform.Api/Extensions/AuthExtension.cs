@@ -58,6 +58,18 @@ public static class AuthExtension
         if (string.IsNullOrEmpty(credentialPath))
             credentialPath = Environment.GetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS");
 
+        // Fallback 2: read raw JSON from FIREBASE_CREDENTIALS_JSON env var and write to temp file
+        if (string.IsNullOrEmpty(credentialPath))
+        {
+            var firebaseJson = Environment.GetEnvironmentVariable("FIREBASE_CREDENTIALS_JSON");
+            if (!string.IsNullOrEmpty(firebaseJson))
+            {
+                var tempFile = Path.Combine(Path.GetTempPath(), $"firebase-credentials-{Guid.NewGuid()}.json");
+                File.WriteAllText(tempFile, firebaseJson);
+                credentialPath = tempFile;
+            }
+        }
+
         GoogleCredential credential;
         if (!string.IsNullOrEmpty(credentialPath))
             credential = GoogleCredential.FromFile(credentialPath);
