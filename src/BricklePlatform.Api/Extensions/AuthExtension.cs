@@ -56,7 +56,25 @@ public static class AuthExtension
 
         var credentialPath = settings.CredentialsFilePath;
 
-        // Try FIREBASE_CREDENTIALS_JSON first (Azure-friendly: inline JSON → temp file)
+        // If CredentialsFilePath is set but file doesn't exist, treat as inline content (JSON or base64)
+        if (!string.IsNullOrEmpty(credentialPath) && !File.Exists(credentialPath))
+        {
+            var content = credentialPath;
+            // Try base64 decode
+            try
+            {
+                var decoded = Encoding.UTF8.GetString(Convert.FromBase64String(credentialPath));
+                if (decoded.TrimStart().StartsWith("{"))
+                    content = decoded;
+            }
+            catch { }
+
+            var tempFile = Path.Combine(Path.GetTempPath(), $"firebase-credentials-{Guid.NewGuid()}.json");
+            File.WriteAllText(tempFile, content);
+            credentialPath = tempFile;
+        }
+
+        // FIREBASE_CREDENTIALS_JSON overrides everything (Azure-friendly: inline JSON → temp file)
         var firebaseJson = Environment.GetEnvironmentVariable("FIREBASE_CREDENTIALS_JSON");
         if (!string.IsNullOrEmpty(firebaseJson))
         {
@@ -65,7 +83,7 @@ public static class AuthExtension
             credentialPath = tempFile;
         }
 
-        // Fallback to GOOGLE_APPLICATION_CREDENTIALS (file path, not inline JSON)
+        // Fallback to GOOGLE_APPLICATION_CREDENTIALS
         if (string.IsNullOrEmpty(credentialPath))
             credentialPath = Environment.GetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS");
 
