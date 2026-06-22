@@ -17,6 +17,7 @@ public static class WebApplicationExtension
             .SetBasePath(Directory.GetCurrentDirectory())
             .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
             .AddJsonFile($"appsettings.{env}.json", optional: true, reloadOnChange: true)
+            .AddUserSecrets<Program>()
             .AddEnvironmentVariables();
 
         // Servicios
