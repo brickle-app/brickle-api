@@ -36,6 +36,15 @@ public class Web3Settings
     /// Debe tener saldo nativo suficiente en la red configurada (<see cref="RpcUrl"/>).
     /// </summary>
     public string WalletPrivateKey { get; set; } = string.Empty;
+    /// <summary>
+    /// Dedicated private key for the gas sponsor relayer. This key signs Paymaster transactions only.
+    /// Do not reuse the Brickle operations wallet here.
+    /// </summary>
+    public string RelayerPrivateKey { get; set; } = string.Empty;
+    /// <summary>
+    /// Minimum native balance, in ether units, considered healthy for the relayer status endpoint.
+    /// </summary>
+    public decimal RelayerMinNativeBalance { get; set; } = 0.01m;
     public string BASE_TOKEN { get; set; }
     public string THRESHOLD_FACTORY { get; set; }
     public string PAYMASTER { get; set; }

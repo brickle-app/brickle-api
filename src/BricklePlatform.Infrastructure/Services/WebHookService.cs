@@ -1,4 +1,5 @@
 using BricklePlatform.Domain.DTOs;
+using BricklePlatform.Domain.DTOs.Relayer;
 using BricklePlatform.Domain.Interfaces;
 using BricklePlatform.Infrastructure.Exceptions;
 using BricklePlatform.Infrastructure.Interfaces;
@@ -22,16 +23,19 @@ public class WebHookService : IWebHookService
     private readonly ILogger<WebHookService> _logger;
     private readonly IHttpClientService _httpClientService;
     private readonly IOptions<InfrastructureSettings> _settings;
+    private readonly IRelayerService _relayerService;
 
 
     public WebHookService(
         ILogger<WebHookService> logger,
         IHttpClientService httpClientService,
-        IOptions<InfrastructureSettings> settings)
+        IOptions<InfrastructureSettings> settings,
+        IRelayerService relayerService)
     {
         _logger = logger;
         _httpClientService = httpClientService;
         _settings = settings;
+        _relayerService = relayerService;
     }
 
     public async Task<WebhookResponseDto> ProcessPaymentWebhookAsync(PaymentDto paymentDto, string walletAddress, string leasingContractAddress, string tokenAddress)
@@ -46,55 +50,12 @@ public class WebHookService : IWebHookService
             _logger.LogInformation("Iniciando procesamiento de pago para el contrato de arrendamiento de usuario: {UserLeasingAgreementId}",
                 leasingContractAddress);
 
-            var permitSignature = new
-            {
-                v = paymentDto.PermitSignature.V,
-                r = paymentDto.PermitSignature.R,
-                s = paymentDto.PermitSignature.S
-            };
-
-
-            var requestBody = new
-            {
-                @params = new[]
-                {
-                    new
-                    {
-                        command = PAYMENT_COMMAND,
-                        token = tokenAddress,
-                        sender = walletAddress,
-                        leasingCore = leasingContractAddress,
-                        amount = paymentDto.PaymentAmount,
-                        fee = "100000",
-                        deadline = paymentDto.Deadline.ToString(),
-                        permitSignature
-                    }
-                }
-            };
-
-            _logger.LogDebug("Enviando pago al webhook: {RequestBody}", JsonConvert.SerializeObject(requestBody));
-
-            RequestHttpModel request = new()
-            {
-                HttpClientName = "Webhook",
-                Method = "POST",
-                Url = $"{_settings.Value.WebhookSettings.Url}",
-                Body = JsonConvert.SerializeObject(requestBody)
-            };
-
-            (bool success, string response) = await _httpClientService.MakeRequestWithHeaders(request);
-
-            if (!success)
-            {
-                throw new InfrastructureException($"Error al procesar el pago: {response}");
-            }
-
-            var webhookResponse = WebhookResponseDto.FromWebhookResult(response);
+            var webhookResponse = ToWebhookResponse(await _relayerService.SponsorPaymentAsync(paymentDto, walletAddress, leasingContractAddress, tokenAddress));
 
             if (!webhookResponse.Status)
             {
-                _logger.LogWarning("Webhook devolvió status false. Sender: {Sender}, LeasingCore: {LeasingCore}, Hash: {Hash}, Error: {Error}. Respuesta completa: {Response}",
-                    walletAddress, leasingContractAddress, webhookResponse.Hash, webhookResponse.ErrorMessage, response);
+                _logger.LogWarning("Relayer devolvió status false. Sender: {Sender}, LeasingCore: {LeasingCore}, Hash: {Hash}, Error: {Error}",
+                    walletAddress, leasingContractAddress, webhookResponse.Hash, webhookResponse.ErrorMessage);
             }
             else
             {
@@ -157,47 +118,7 @@ public class WebHookService : IWebHookService
             _logger.LogInformation("Iniciando procesamiento de compromiso de fondos de usuario: {UserWallet}",
                 commitFundsDto.Sender);
 
-            var permitSignature = new
-            {
-                v = permit.V,
-                r = permit.R,
-                s = permit.S
-            };
-
-            var requestBody = new
-            {
-                @params = new[]
-                {
-                    new
-                    {
-                        command = COMMIT_FUNDS_COMMAND,
-                        token = commitFundsDto.Token,
-                        sender = commitFundsDto.Sender,
-                        campaign = commitFundsDto.Campaign,
-                        amount = commitFundsDto.Amount,
-                        fee = commitFundsDto.Fee,
-                        deadline,
-                        permitSignature
-                    }
-                }
-            };
-
-            RequestHttpModel request = new()
-            {
-                HttpClientName = "Webhook",
-                Method = "POST",
-                Url = $"{_settings.Value.WebhookSettings.Url}",
-                Body = JsonConvert.SerializeObject(requestBody)
-            };
-
-            (bool success, string response) = await _httpClientService.MakeRequestWithHeaders(request);
-
-            if (!success)
-            {
-                throw new InfrastructureException($"Error al procesar el compromiso de fondos: {response}");
-            }
-
-            var webhookResponse = WebhookResponseDto.FromWebhookResult(response);
+            var webhookResponse = ToWebhookResponse(await _relayerService.SponsorCommitAsync(commitFundsDto, deadline, permit));
 
             _logger.LogInformation("Pago procesado exitosamente para la campaña : {Camapign}",
                 commitFundsDto.Campaign);
@@ -225,46 +146,7 @@ public class WebHookService : IWebHookService
             _logger.LogInformation("Iniciando procesamiento de reclamo de renta para contrato: {LeasingCore}",
                 leasingCore);
 
-            var permitSignatureObj = new
-            {
-                v = permitSignature.V,
-                r = permitSignature.R,
-                s = permitSignature.S
-            };
-
-            var requestBody = new
-            {
-                @params = new[]
-                {
-                    new
-                    {
-                        command = CLAIM_RENT_COMMAND,
-                        token,
-                        leasingCore,
-                        receiver,
-                        fee,
-                        deadline,
-                        permitSignature = permitSignatureObj
-                    }
-                }
-            };
-
-            RequestHttpModel request = new()
-            {
-                HttpClientName = "Webhook",
-                Method = "POST",
-                Url = $"{_settings.Value.WebhookSettings.Url}",
-                Body = JsonConvert.SerializeObject(requestBody)
-            };
-
-            (bool success, string response) = await _httpClientService.MakeRequestWithHeaders(request);
-
-            if (!success)
-            {
-                throw new InfrastructureException($"Error al procesar el reclamo de renta: {response}");
-            }
-
-            var webhookResponse = WebhookResponseDto.FromWebhookResult(response);
+            var webhookResponse = ToWebhookResponse(await _relayerService.SponsorClaimRentAsync(token, leasingCore, receiver, fee, deadline, permitSignature));
 
             _logger.LogInformation("Reclamo de renta procesado exitosamente para el contrato: {LeasingCore}",
                 leasingCore);
@@ -284,4 +166,11 @@ public class WebHookService : IWebHookService
             throw new InfrastructureException(errorMessage, ex);
         }
     }
+
+    private static WebhookResponseDto ToWebhookResponse(RelayerTransactionResponseDto response) => new()
+    {
+        Hash = response.Hash,
+        Status = response.Status,
+        ErrorMessage = response.ErrorMessage
+    };
 }

@@ -55,6 +55,7 @@ public static class DependencyContainer
         services.AddTransient<LeasingFileUpdater>();
         services.AddTransient<UserFileUpdater>();
         services.AddTransient<PaymentFileUpdater>();
+        services.AddTransient<IRelayerService, RelayerService>();
         services.AddTransient<IWebHookService, WebHookService>();
         services.AddTransient<INotificationService, ExpoNotificationService>();
         services.AddTransient<IThresholdFactoryService, ThresholdFactoryService>();
