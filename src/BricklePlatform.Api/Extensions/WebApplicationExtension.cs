@@ -48,6 +48,7 @@ public static class WebApplicationExtension
 
     public static WebApplication ConfigureWebApplication(this WebApplication app)
     {
+        app.UseCors("mycors");
         app.UseAuthentication();
         app.UseAuthorization();
         app.MapControllers();
@@ -59,7 +60,6 @@ public static class WebApplicationExtension
             c.RoutePrefix = string.Empty;
         });
 
-        app.UseCors("mycors");
         app.UseHttpsRedirection();
 
         app.UseMiddleware<ErrorHandlerMiddleware>(new Dictionary<Type, IExceptionHandler>

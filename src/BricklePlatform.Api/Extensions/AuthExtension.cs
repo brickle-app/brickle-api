@@ -1,8 +1,10 @@
 using System.Text;
+using BricklePlatform.Api.Authentication;
 using BricklePlatform.Infrastructure.Services;
 using BricklePlatform.Infrastructure.Settings;
 using FirebaseAdmin;
 using Google.Apis.Auth.OAuth2;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 
@@ -26,9 +28,19 @@ public static class AuthExtension
         var key = Encoding.UTF8.GetBytes(jwtSettings.SecretKey);
         services.AddAuthentication(options =>
         {
-            options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-            options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            options.DefaultAuthenticateScheme = "BrickleAuth";
+            options.DefaultChallengeScheme = "BrickleAuth";
         })
+        .AddPolicyScheme("BrickleAuth", "JWT or API key", options =>
+        {
+            options.ForwardDefaultSelector = context =>
+                context.Request.Headers.ContainsKey(ApiKeyAuthenticationHandler.HeaderName)
+                    ? ApiKeyAuthenticationHandler.SchemeName
+                    : JwtBearerDefaults.AuthenticationScheme;
+        })
+        .AddScheme<AuthenticationSchemeOptions, ApiKeyAuthenticationHandler>(
+            ApiKeyAuthenticationHandler.SchemeName,
+            _ => { })
         .AddJwtBearer(options =>
         {
             options.TokenValidationParameters = new TokenValidationParameters

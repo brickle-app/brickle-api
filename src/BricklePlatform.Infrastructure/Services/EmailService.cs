@@ -34,10 +34,10 @@ public class EmailService : IEmailService
         _logger = logger;
     }
 
-    /// <summary>Logo horizontal oficial (webp público en brickle.app).</summary>
+    /// <summary>Logo horizontal público. En email, WebP se rechaza y cae a wordmark HTML por compatibilidad.</summary>
     private const string DefaultBrickleLogoImageUrl = "https://brickle.app/assets/logo_green-B0JL5kO0.webp";
 
-    /// <summary>URL pública del logo para &lt;img&gt;; si la config está vacía se usa el logo por defecto. Si la URL no es http(s) válida, wordmark textual.</summary>
+    /// <summary>URL pública del logo para &lt;img&gt;; si la config está vacía se usa el logo por defecto. Si la URL no es http(s) o no es formato email-safe, usa wordmark HTML.</summary>
     private string? EmailLogoImageUrl =>
         string.IsNullOrWhiteSpace(_settings.Value.EmailSettings.LogoImageUrl)
             ? DefaultBrickleLogoImageUrl
@@ -214,8 +214,22 @@ public class EmailService : IEmailService
         if (string.IsNullOrWhiteSpace(logoImageUrl)) return false;
         if (!Uri.TryCreate(logoImageUrl.Trim(), UriKind.Absolute, out var uri)) return false;
         if (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps) return false;
+        var path = uri.AbsolutePath;
+        if (!path.EndsWith(".png", StringComparison.OrdinalIgnoreCase) &&
+            !path.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase) &&
+            !path.EndsWith(".jpeg", StringComparison.OrdinalIgnoreCase) &&
+            !path.EndsWith(".gif", StringComparison.OrdinalIgnoreCase))
+            return false;
         htmlEncodedAbsoluteUri = WebUtility.HtmlEncode(uri.ToString());
         return true;
+    }
+
+    private static string BuildHtmlWordmark()
+    {
+        return $@"
+              <div aria-label=""Brickle"" style=""font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:42px;line-height:1;font-weight:900;letter-spacing:-0.06em;color:{BrandMint};text-align:center;white-space:nowrap;"">
+                <span style=""display:inline-block;color:{BrandMint};"">Br</span><span style=""display:inline-block;width:17px;height:48px;margin:0 1px -10px 1px;background:repeating-linear-gradient(135deg,{BrandLilac} 0,{BrandLilac} 5px,#7D52D9 5px,#7D52D9 10px);vertical-align:baseline;border-radius:2px;"">&nbsp;</span><span style=""display:inline-block;color:{BrandMint};"">ckle</span>
+              </div>";
     }
 
     private static string BuildBrandHeaderRow(string? logoImageUrl)
@@ -225,7 +239,7 @@ public class EmailService : IEmailService
             return $@"
           <tr>
             <td style=""padding:0 0 20px 0;text-align:center;"">
-              <img src=""{src}"" alt=""Brickle"" width=""200"" style=""max-width:220px;width:100%;height:auto;display:block;margin:0 auto;border:0;outline:none;text-decoration:none;"" />
+              <img src=""{src}"" alt=""Brickle"" width=""200"" height=""38"" style=""width:200px;height:38px;display:block;margin:0 auto;border:0;outline:none;text-decoration:none;"" />
               <div style=""font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:11px;color:{BrandMuted};margin-top:10px;letter-spacing:0.04em;"">Inversión en activos reales</div>
             </td>
           </tr>";
@@ -234,8 +248,8 @@ public class EmailService : IEmailService
         return $@"
           <tr>
             <td style=""padding:0 0 20px 0;text-align:center;"">
-              <span style=""font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:22px;font-weight:800;letter-spacing:0.12em;color:{BrandNavy};"">BRICKLE</span>
-              <div style=""font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:11px;color:{BrandMuted};margin-top:6px;letter-spacing:0.04em;"">Inversión en activos reales</div>
+              {BuildHtmlWordmark()}
+              <div style=""font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:11px;color:{BrandMuted};margin-top:10px;letter-spacing:0.04em;"">Inversión en activos reales</div>
             </td>
           </tr>";
     }

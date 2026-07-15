@@ -41,6 +41,7 @@ public static class DependencyContainer
         services.AddTransient<IInvestmentRepository, InvestmentRepository>();
         services.AddTransient<IUserBankAccountRepository, UserBankAccountRepository>();
         services.AddTransient<IUserDocumentRepository, UserDocumentRepository>();
+        services.AddTransient<IWalletBackupRepository, WalletBackupRepository>();
 
         // Services
         services.AddHttpClient();
@@ -61,6 +62,7 @@ public static class DependencyContainer
         services.AddTransient<IThresholdFactoryService, ThresholdFactoryService>();
         services.AddTransient<ILeasingCoreService, LeasingCoreService>();
         services.AddTransient<IUserActivityLogService, UserActivityLogService>();
+        services.AddTransient<IWalletBackupService, WalletBackupService>();
 
         services.AddMemoryCache();
         services.AddTransient<IJwtService, JwtService>();
