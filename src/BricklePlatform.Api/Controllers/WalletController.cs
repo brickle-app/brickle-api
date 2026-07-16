@@ -1,4 +1,5 @@
 using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using BricklePlatform.Domain.DTOs.Wallet;
 using BricklePlatform.Domain.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -90,7 +91,8 @@ public class WalletController : ControllerBase
 
     private bool TryGetAuthenticatedUserId(out Guid userId)
     {
-        var value = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+        var value = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value
+            ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         return Guid.TryParse(value, out userId);
     }
 }

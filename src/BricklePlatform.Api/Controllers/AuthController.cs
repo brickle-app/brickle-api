@@ -92,8 +92,6 @@ public class AuthController : ControllerBase
                     profilePictureUrl: picture);
 
                 user = await _userRepository.AddAsync(user);
-                user.Update(isBasicProfileComplete: true);
-                await _userRepository.UpdateAsync(user);
                 _logger.LogInformation("New user created via Google Sign-In: {Email}", email);
             }
             else
@@ -102,11 +100,6 @@ public class AuthController : ControllerBase
                 if (!string.IsNullOrEmpty(picture))
                 {
                     user.UpdateProfilePicture(picture);
-                    needsUpdate = true;
-                }
-                if (!user.IsBasicProfileComplete && !string.IsNullOrEmpty(user.FirstName))
-                {
-                    user.Update(isBasicProfileComplete: true);
                     needsUpdate = true;
                 }
                 if (needsUpdate)
@@ -204,14 +197,7 @@ public class AuthController : ControllerBase
                     passwordSalt: Array.Empty<byte>());
 
                 user = await _userRepository.AddAsync(user);
-                user.Update(isBasicProfileComplete: true);
-                await _userRepository.UpdateAsync(user);
                 _logger.LogInformation("New user created via OTP: {Email}", request.Email);
-            }
-            else if (!user.IsBasicProfileComplete && !string.IsNullOrEmpty(user.FirstName))
-            {
-                user.Update(isBasicProfileComplete: true);
-                await _userRepository.UpdateAsync(user);
             }
 
             var accessToken = _jwtService.GenerateAccessToken(user.Id, user.Email);
@@ -304,10 +290,22 @@ public class AuthController : ControllerBase
             CurrentSession = user.CurrentSession,
             ExternalWalletId = user.ExternalWalletId,
             CreatedAt = user.CreatedAt,
-            IsBasicProfileComplete = user.IsBasicProfileComplete,
+            IsBasicProfileComplete = HasCompleteBasicProfile(user),
             IsFullProfileComplete = user.IsFullProfileComplete,
             IsProfileUnderReview = user.IsProfileUnderReview
         };
+    }
+
+    private static bool HasCompleteBasicProfile(BricklePlatform.Domain.Entities.User user)
+    {
+        return !string.IsNullOrWhiteSpace(user.FirstName) &&
+            !string.IsNullOrWhiteSpace(user.LastName) &&
+            !string.IsNullOrWhiteSpace(user.PhoneNumber) &&
+            user.DateOfBirth.HasValue &&
+            !string.IsNullOrWhiteSpace(user.Nationality) &&
+            !string.IsNullOrWhiteSpace(user.CountryOfResidence) &&
+            user.DocumentType.HasValue &&
+            !string.IsNullOrWhiteSpace(user.DocumentNumber);
     }
 }
 

@@ -972,6 +972,9 @@ Los secretos no deben guardarse en `appsettings.*.json`. Use variables de entorn
 | Variable | Descripción |
 |----------|-------------|
 | `InfrastructureSettings__Web3Settings__WalletPrivateKey` | Clave privada de la **wallet de operaciones** en el API: firma txs on-chain (campañas, cierre residual, etc.) y **paga gas**. En `finalize-residual`, el **LeasingCore** acumula residual + incentivo final a inversores (según versión desplegada). **Obligatoria** donde haya escritura en blockchain. |
+| `InfrastructureSettings__EmailSettings__LogoImageUrl` | URL HTTPS completa de lectura del PNG oficial usado en los emails. Como el blob de marca es privado, producción debe suministrar externamente una URL SAS de solo lectura mediante su configuración segura de runtime. |
+
+El valor vacío conservado en `appsettings.Production.json` no configura producción. El entorno de despliegue debe definir exactamente `InfrastructureSettings__EmailSettings__LogoImageUrl`; no guarde el SAS en archivos versionados.
 
 En .NET, el doble guión bajo `__` se interpreta como jerarquía de configuración. Ejemplo en Linux/macOS:
 

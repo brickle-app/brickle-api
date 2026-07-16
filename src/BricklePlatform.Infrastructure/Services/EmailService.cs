@@ -15,6 +15,7 @@ public interface IEmailService
     Task SendLeasingActiveNotificationAsync(string userEmail, string userName, string campaignName);
     Task SendProfileUnderReviewAsync(string userEmail, string userName);
     Task SendProfileApprovedAsync(string userEmail, string userName);
+    Task SendProfileRejectedAsync(string userEmail, string userName, string? observation);
     Task SendOtpEmailAsync(string userEmail, string userName, string otpCode);
 }
 
@@ -34,13 +35,9 @@ public class EmailService : IEmailService
         _logger = logger;
     }
 
-    /// <summary>Logo horizontal público. En email, WebP se rechaza y cae a wordmark HTML por compatibilidad.</summary>
-    private const string DefaultBrickleLogoImageUrl = "https://brickle.app/assets/logo_green-B0JL5kO0.webp";
-
-    /// <summary>URL pública del logo para &lt;img&gt;; si la config está vacía se usa el logo por defecto. Si la URL no es http(s) o no es formato email-safe, usa wordmark HTML.</summary>
     private string? EmailLogoImageUrl =>
         string.IsNullOrWhiteSpace(_settings.Value.EmailSettings.LogoImageUrl)
-            ? DefaultBrickleLogoImageUrl
+            ? null
             : _settings.Value.EmailSettings.LogoImageUrl.Trim();
 
     public async Task SendRechargeNotificationAsync(string userEmail, string userName, decimal amount, string receipt, string walletAddress)
@@ -224,14 +221,6 @@ public class EmailService : IEmailService
         return true;
     }
 
-    private static string BuildHtmlWordmark()
-    {
-        return $@"
-              <div aria-label=""Brickle"" style=""font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:42px;line-height:1;font-weight:900;letter-spacing:-0.06em;color:{BrandMint};text-align:center;white-space:nowrap;"">
-                <span style=""display:inline-block;color:{BrandMint};"">Br</span><span style=""display:inline-block;width:17px;height:48px;margin:0 1px -10px 1px;background:repeating-linear-gradient(135deg,{BrandLilac} 0,{BrandLilac} 5px,#7D52D9 5px,#7D52D9 10px);vertical-align:baseline;border-radius:2px;"">&nbsp;</span><span style=""display:inline-block;color:{BrandMint};"">ckle</span>
-              </div>";
-    }
-
     private static string BuildBrandHeaderRow(string? logoImageUrl)
     {
         if (TryGetTrustedLogoImageSrc(logoImageUrl, out var src))
@@ -239,18 +228,14 @@ public class EmailService : IEmailService
             return $@"
           <tr>
             <td style=""padding:0 0 20px 0;text-align:center;"">
-              <img src=""{src}"" alt=""Brickle"" width=""200"" height=""38"" style=""width:200px;height:38px;display:block;margin:0 auto;border:0;outline:none;text-decoration:none;"" />
-              <div style=""font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:11px;color:{BrandMuted};margin-top:10px;letter-spacing:0.04em;"">Inversión en activos reales</div>
+              <img src=""{src}"" alt=""Brickle - Donde crecer es más fácil"" width=""259"" height=""82"" style=""display:block;width:259px;max-width:100%;height:auto;margin:0 auto;border:0;outline:none;text-decoration:none;"" />
             </td>
           </tr>";
         }
 
         return $@"
           <tr>
-            <td style=""padding:0 0 20px 0;text-align:center;"">
-              {BuildHtmlWordmark()}
-              <div style=""font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:11px;color:{BrandMuted};margin-top:10px;letter-spacing:0.04em;"">Inversión en activos reales</div>
-            </td>
+            <td style=""padding:0 0 20px 0;text-align:center;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:28px;line-height:1.2;font-weight:800;color:{BrandNavy};"">Brickle</td>
           </tr>";
     }
 
@@ -494,6 +479,29 @@ public class EmailService : IEmailService
         }
     }
 
+    public async Task SendProfileRejectedAsync(string userEmail, string userName, string? observation)
+    {
+        try
+        {
+            var emailMessage = new EmailMessage
+            {
+                From = _settings.Value.EmailSettings.FromEmail,
+                To = userEmail,
+                Subject = "Brickle · Tu documento necesita revisión",
+                HtmlBody = GenerateProfileRejectedTemplate(userName, observation)
+            };
+
+            await _resend.EmailSendAsync(emailMessage);
+
+            _logger.LogInformation("Profile rejected email sent successfully. User: {UserEmail}", userEmail);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error sending profile rejected email for user: {UserEmail}", userEmail);
+            throw;
+        }
+    }
+
     private string GenerateProfileUnderReviewTemplate(string userName)
     {
         var steps = $@"
@@ -538,6 +546,27 @@ public class EmailService : IEmailService
             BrandMint,
             "¡Tu perfil fue aprobado!",
             "Ya puedes invertir en activos reales con Brickle.",
+            inner,
+            EmailLogoImageUrl);
+    }
+
+    private string GenerateProfileRejectedTemplate(string userName, string? observation)
+    {
+        var reason = string.IsNullOrWhiteSpace(observation)
+            ? "No se especificó un motivo adicional."
+            : H(observation);
+
+        var inner = $@"
+<p style=""margin:0 0 16px 0;color:{BrandText};"">Hola <strong>{H(userName)}</strong>,</p>
+<p style=""margin:0 0 18px 0;color:{BrandText};"">Revisamos tu documento de identidad y necesitamos que lo cargues nuevamente para poder validar tu perfil.</p>
+" + CardSection("Motivo", $@"<p style=""margin:0;color:{BrandText};"">{reason}</p>", BrandPurple, "#FFF7ED") + $@"
+<p style=""margin:0;color:{BrandMuted};font-size:14px;"">Entra a la app Brickle, revisa tu perfil y sube una imagen clara del documento solicitado.</p>";
+
+        return BrickleEmailDocument(
+            "Documento rechazado",
+            BrandPurple,
+            "Tu documento necesita revisión",
+            "Carga nuevamente tu documento para continuar con la validación.",
             inner,
             EmailLogoImageUrl);
     }

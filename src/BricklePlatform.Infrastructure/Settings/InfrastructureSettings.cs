@@ -78,11 +78,7 @@ public class EmailSettings
     public string ApiKey { get; set; } = string.Empty;
     public string FromEmail { get; set; } = string.Empty;
     public string AdminEmail { get; set; } = string.Empty;
-    /// <summary>
-    /// URL absoluta (https) del logo para plantillas HTML.
-    /// Por defecto: logo público en brickle.app. Vacío en configuración = usar este valor.
-    /// </summary>
-    public string LogoImageUrl { get; set; } = "https://brickle.app/assets/logo_green-B0JL5kO0.webp";
+    public string LogoImageUrl { get; set; } = string.Empty;
 }
 
 public class JwtSettings

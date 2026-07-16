@@ -153,8 +153,9 @@ public class UserController : ControllerBase
                 CurrentSession = user.CurrentSession,
                 ExternalWalletId = user.ExternalWalletId,
                 CreatedAt = user.CreatedAt,
-                IsBasicProfileComplete = user.IsBasicProfileComplete,
+                IsBasicProfileComplete = HasCompleteBasicProfile(user),
                 IsFullProfileComplete = user.IsFullProfileComplete,
+                IsProfileUnderReview = user.IsProfileUnderReview,
                 Company = user.Company != null ? new CompanyDto
                 {
                     Id = user.Company.Id,
@@ -229,8 +230,9 @@ public class UserController : ControllerBase
                 CurrentSession = user.CurrentSession,
                 ExternalWalletId = user.ExternalWalletId,
                 CreatedAt = user.CreatedAt,
-                IsBasicProfileComplete = user.IsBasicProfileComplete,
+                IsBasicProfileComplete = HasCompleteBasicProfile(user),
                 IsFullProfileComplete = user.IsFullProfileComplete,
+                IsProfileUnderReview = user.IsProfileUnderReview,
                 Company = user.Company != null ? new CompanyDto
                 {
                     Id = user.Company.Id,
@@ -1008,5 +1010,17 @@ public class UserController : ControllerBase
             _logger.LogError(ex, "Error al actualizar estado del documento - CorrelationId: {CorrelationId}", header.CorrelationId);
             return BadRequest(new { error = ex.Message });
         }
+    }
+
+    private static bool HasCompleteBasicProfile(Domain.Entities.User user)
+    {
+        return !string.IsNullOrWhiteSpace(user.FirstName) &&
+            !string.IsNullOrWhiteSpace(user.LastName) &&
+            !string.IsNullOrWhiteSpace(user.PhoneNumber) &&
+            user.DateOfBirth.HasValue &&
+            !string.IsNullOrWhiteSpace(user.Nationality) &&
+            !string.IsNullOrWhiteSpace(user.CountryOfResidence) &&
+            user.DocumentType.HasValue &&
+            !string.IsNullOrWhiteSpace(user.DocumentNumber);
     }
 }

@@ -379,3 +379,6 @@ FodyWeavers.xsd
 .cursor-settings/
 *.cursor-cache
 *.cursor-snapshot
+
+# Superpowers local visual previews
+.superpowers/

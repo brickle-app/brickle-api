@@ -72,7 +72,26 @@ public class WalletControllerTests
         Assert.Equal(response, ok.Value);
     }
 
-    private static WalletController CreateController(IWalletBackupService service, Guid userId)
+    [Fact]
+    public async Task UpgradeBackupUsesAuthenticatedUserIdFromMappedNameIdentifierClaim()
+    {
+        var userId = Guid.NewGuid();
+        var service = new Mock<IWalletBackupService>();
+        var request = ValidRequest();
+        var response = ValidResponse();
+        service.Setup(s => s.UpgradeActiveWalletAsync(userId, request)).ReturnsAsync(response);
+        var controller = CreateController(service.Object, userId, ClaimTypes.NameIdentifier);
+
+        var result = await controller.UpgradeBackup(request);
+
+        var ok = Assert.IsType<OkObjectResult>(result);
+        Assert.Equal(response, ok.Value);
+    }
+
+    private static WalletController CreateController(
+        IWalletBackupService service,
+        Guid userId,
+        string claimType = JwtRegisteredClaimNames.Sub)
     {
         var controller = new WalletController(service, NullLogger<WalletController>.Instance);
         controller.ControllerContext = new ControllerContext
@@ -81,7 +100,7 @@ public class WalletControllerTests
             {
                 User = new ClaimsPrincipal(new ClaimsIdentity(new[]
                 {
-                    new Claim(JwtRegisteredClaimNames.Sub, userId.ToString())
+                    new Claim(claimType, userId.ToString())
                 }, "TestAuth"))
             }
         };

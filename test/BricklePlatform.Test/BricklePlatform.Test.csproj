@@ -21,6 +21,7 @@
     <ProjectReference Include="..\..\src\BricklePlatform.Api\BricklePlatform.Api.csproj" />
     <ProjectReference Include="..\..\src\BricklePlatform.Domain\BricklePlatform.Domain.csproj" />
     <ProjectReference Include="..\..\src\BricklePlatform.Infrastructure\BricklePlatform.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\tools\BricklePlatform.EmailAssets\BricklePlatform.EmailAssets.csproj" />
   </ItemGroup>
 
 </Project>
