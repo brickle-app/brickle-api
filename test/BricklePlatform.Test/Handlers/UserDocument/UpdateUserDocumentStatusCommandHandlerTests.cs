@@ -14,16 +14,21 @@ namespace BricklePlatform.Test.Handlers.UserDocument;
 public class UpdateUserDocumentStatusCommandHandlerTests
 {
     [Fact]
-    public async Task ApprovedDocumentSendsApprovalEmailAndPushNotification()
+    public async Task ApprovedDocumentSendsApprovalEmailAndPushNotificationWhenAllRequiredDocumentsApproved()
     {
         var user = CreateUser();
-        var document = DomainUserDocument.Create(user.Id, "Identity Document", "https://example.com/id.png");
+        var document = DomainUserDocument.Create(user.Id, "Identity Document", UserDocumentType.Identity, "https://example.com/id.png");
+        document.UpdateStatus("APPROVED");
+        var bankCertificate = DomainUserDocument.Create(user.Id, "Bank Certificate", UserDocumentType.BankCertificate, "https://example.com/bank.png");
+        bankCertificate.UpdateStatus("APPROVED");
         var documentRepository = new Mock<IUserDocumentRepository>();
         var userRepository = new Mock<IUserRepository>();
         var notificationService = new Mock<INotificationService>();
         var emailService = new Mock<IEmailService>();
         documentRepository.Setup(r => r.GetByIdAsync(document.Id)).ReturnsAsync(document);
         documentRepository.Setup(r => r.UpdateAsync(document)).ReturnsAsync(document);
+        documentRepository.Setup(r => r.GetByUserIdAsync(user.Id))
+            .ReturnsAsync(new[] { document, bankCertificate });
         userRepository.Setup(r => r.GetByIdAsync(user.Id)).ReturnsAsync(user);
 
         var handler = new UpdateUserDocumentStatusCommandHandler(
@@ -44,10 +49,40 @@ public class UpdateUserDocumentStatusCommandHandlerTests
     }
 
     [Fact]
+    public async Task ApprovedDocumentDoesNotSendApprovalWhenOtherRequiredDocumentIsMissing()
+    {
+        var user = CreateUser();
+        var document = DomainUserDocument.Create(user.Id, "Identity Document", UserDocumentType.Identity, "https://example.com/id.png");
+        document.UpdateStatus("APPROVED");
+        var documentRepository = new Mock<IUserDocumentRepository>();
+        var userRepository = new Mock<IUserRepository>();
+        var notificationService = new Mock<INotificationService>();
+        var emailService = new Mock<IEmailService>();
+        documentRepository.Setup(r => r.GetByIdAsync(document.Id)).ReturnsAsync(document);
+        documentRepository.Setup(r => r.UpdateAsync(document)).ReturnsAsync(document);
+        documentRepository.Setup(r => r.GetByUserIdAsync(user.Id))
+            .ReturnsAsync(new[] { document });
+        userRepository.Setup(r => r.GetByIdAsync(user.Id)).ReturnsAsync(user);
+
+        var handler = new UpdateUserDocumentStatusCommandHandler(
+            documentRepository.Object,
+            userRepository.Object,
+            notificationService.Object,
+            emailService.Object,
+            NullLogger<UpdateUserDocumentStatusCommandHandler>.Instance);
+
+        await handler.Handle(new UpdateUserDocumentStatusCommand(document.Id, "APPROVED"), CancellationToken.None);
+
+        emailService.Verify(e => e.SendProfileApprovedAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+        notificationService.Verify(n => n.SendNotificationAsync(
+            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<object>()), Times.Never);
+    }
+
+    [Fact]
     public async Task RejectedDocumentSendsRejectionEmailAndPushNotification()
     {
         var user = CreateUser();
-        var document = DomainUserDocument.Create(user.Id, "Identity Document", "https://example.com/id.png");
+        var document = DomainUserDocument.Create(user.Id, "Identity Document", UserDocumentType.Identity, "https://example.com/id.png");
         var documentRepository = new Mock<IUserDocumentRepository>();
         var userRepository = new Mock<IUserRepository>();
         var notificationService = new Mock<INotificationService>();

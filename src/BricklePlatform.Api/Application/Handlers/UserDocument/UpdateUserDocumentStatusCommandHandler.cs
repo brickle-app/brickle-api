@@ -54,20 +54,36 @@ public class UpdateUserDocumentStatusCommandHandler : IRequestHandler<UpdateUser
 
             if (user != null)
             {
-                user.IsBasicProfileComplete = request.Status == "APPROVED";
-                user.IsFullProfileComplete = request.Status == "APPROVED";
-                user.IsProfileUnderReview = false;
-                await _userRepository.UpdateAsync(user);
-
-                if (request.Status == "APPROVED")
+                if (request.Status == "REJECTED")
                 {
-                    await TrySendProfileApprovedEmailAsync(user);
-                    await TrySendProfileApprovedNotificationAsync(user, document.Id);
+                    // A single rejected document invalidates the whole identity verification,
+                    // regardless of the status of the user's other required documents.
+                    user.IsBasicProfileComplete = false;
+                    user.IsFullProfileComplete = false;
+                    user.IsProfileUnderReview = false;
+                    await _userRepository.UpdateAsync(user);
+
+                    await TrySendProfileRejectedEmailAsync(user, request.Observation);
+                    await TrySendProfileRejectedNotificationAsync(user, document.Id, request.Observation);
                 }
                 else
                 {
-                    await TrySendProfileRejectedEmailAsync(user, request.Observation);
-                    await TrySendProfileRejectedNotificationAsync(user, document.Id, request.Observation);
+                    var allUserDocuments = await _documentRepository.GetByUserIdAsync(user.Id);
+                    var allRequiredDocumentsApproved = Domain.Entities.UserDocumentType.Required.All(requiredType =>
+                        allUserDocuments.Any(d => d.DocumentType == requiredType && d.Status == "APPROVED"));
+
+                    if (allRequiredDocumentsApproved)
+                    {
+                        user.IsBasicProfileComplete = true;
+                        user.IsFullProfileComplete = true;
+                        user.IsProfileUnderReview = false;
+                        await _userRepository.UpdateAsync(user);
+
+                        await TrySendProfileApprovedEmailAsync(user);
+                        await TrySendProfileApprovedNotificationAsync(user, document.Id);
+                    }
+                    // Otherwise: still waiting on the user's other required document(s) -
+                    // keep IsProfileUnderReview as-is and don't notify yet.
                 }
             }
         }
@@ -79,6 +95,7 @@ public class UpdateUserDocumentStatusCommandHandler : IRequestHandler<UpdateUser
             UserName = document.User != null ? $"{document.User.FirstName} {document.User.LastName}" : "Unknown",
             UserEmail = document.User?.Email ?? "Unknown",
             Name = document.Name,
+            DocumentType = document.DocumentType,
             DocumentUrl = document.DocumentUrl,
             Status = document.Status,
             Observation = document.Observation,

@@ -29,6 +29,7 @@ public class GetAllUserDocumentsQueryHandler : IRequestHandler<GetAllUserDocumen
             UserName = d.User != null ? $"{d.User.FirstName} {d.User.LastName}" : "Unknown",
             UserEmail = d.User?.Email ?? "Unknown",
             Name = d.Name,
+            DocumentType = d.DocumentType,
             DocumentUrl = d.DocumentUrl,
             Status = d.Status,
             Observation = d.Observation,

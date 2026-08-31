@@ -7,6 +7,7 @@ public class UserDocumentDto
     public string UserName { get; set; } = null!;
     public string UserEmail { get; set; } = null!;
     public string? Name { get; set; }
+    public string DocumentType { get; set; } = null!;
     public string? DocumentUrl { get; set; }
     public string Status { get; set; } = null!;
     public string? Observation { get; set; }

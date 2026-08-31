@@ -7,6 +7,7 @@ public class UserDocument
     public Guid Id { get; private set; }
     public Guid? UserId { get; private set; }
     public string? Name { get; private set; }
+    public string DocumentType { get; private set; } = UserDocumentType.Identity;
     public string? DocumentUrl { get; private set; }
     public string Status { get; private set; }
     public string? Observation { get; private set; }
@@ -21,6 +22,7 @@ public class UserDocument
     public static UserDocument Create(
         Guid userId,
         string name,
+        string documentType,
         string documentUrl)
     {
         return new UserDocument
@@ -28,6 +30,7 @@ public class UserDocument
             Id = Guid.NewGuid(),
             UserId = userId,
             Name = name,
+            DocumentType = documentType,
             DocumentUrl = documentUrl,
             Status = "PENDING",
             CreatedAt = DateTime.UtcNow,
@@ -39,6 +42,15 @@ public class UserDocument
     {
         Status = status;
         Observation = observation;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void Resubmit(string name, string documentUrl)
+    {
+        Name = name;
+        DocumentUrl = documentUrl;
+        Status = "PENDING";
+        Observation = null;
         UpdatedAt = DateTime.UtcNow;
     }
 }

@@ -25,6 +25,12 @@ public class UserDocumentConfiguration : IEntityTypeConfiguration<UserDocument>
             .HasMaxLength(200)
             .HasColumnName("document_name");
 
+        builder.Property(d => d.DocumentType)
+            .IsRequired()
+            .HasMaxLength(50)
+            .HasDefaultValue(Domain.Entities.UserDocumentType.Identity)
+            .HasColumnName("document_type");
+
         builder.Property(d => d.DocumentUrl)
             .IsRequired(false)
             .HasMaxLength(500)
@@ -52,7 +58,8 @@ public class UserDocumentConfiguration : IEntityTypeConfiguration<UserDocument>
             .HasForeignKey(d => d.UserId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.HasIndex(d => d.UserId)
-            .HasDatabaseName("IX_UserDocument_UserId");
+        builder.HasIndex(d => new { d.UserId, d.DocumentType })
+            .IsUnique()
+            .HasDatabaseName("IX_UserDocument_UserId_DocumentType");
     }
 }

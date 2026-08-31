@@ -4,6 +4,7 @@ using BricklePlatform.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BricklePlatform.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260818215928_AddUniqueIndexUserDocumentUserId")]
+    partial class AddUniqueIndexUserDocumentUserId
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -541,14 +544,6 @@ namespace BricklePlatform.Infrastructure.Migrations
                         .HasColumnType("datetime2")
                         .HasColumnName("created_at");
 
-                    b.Property<string>("DocumentType")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)")
-                        .HasDefaultValue("IDENTITY")
-                        .HasColumnName("document_type");
-
                     b.Property<string>("DocumentUrl")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)")
@@ -580,9 +575,9 @@ namespace BricklePlatform.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId", "DocumentType")
+                    b.HasIndex("UserId")
                         .IsUnique()
-                        .HasDatabaseName("IX_UserDocument_UserId_DocumentType")
+                        .HasDatabaseName("IX_UserDocument_UserId")
                         .HasFilter("[user_id] IS NOT NULL");
 
                     b.ToTable("UserDocument", "dbo");

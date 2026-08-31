@@ -30,6 +30,7 @@ public class GetUserDocumentsQueryHandler : IRequestHandler<GetUserDocumentsQuer
             Id = d.Id,
             UserId = d.UserId,
             Name = d.Name,
+            DocumentType = d.DocumentType,
             DocumentUrl = d.DocumentUrl,
             Status = d.Status,
             Observation = d.Observation,
