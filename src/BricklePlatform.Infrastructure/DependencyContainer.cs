@@ -41,6 +41,7 @@ public static class DependencyContainer
         services.AddTransient<IInvestmentRepository, InvestmentRepository>();
         services.AddTransient<IUserBankAccountRepository, UserBankAccountRepository>();
         services.AddTransient<IUserDocumentRepository, UserDocumentRepository>();
+        services.AddTransient<IUserDocumentSignatureRepository, UserDocumentSignatureRepository>();
         services.AddTransient<IWalletBackupRepository, WalletBackupRepository>();
 
         // Services

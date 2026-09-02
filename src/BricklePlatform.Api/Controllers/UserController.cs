@@ -13,6 +13,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Http;
 using BricklePlatform.Api.Application.Commands.UserDocument;
 using BricklePlatform.Api.Application.Queries.UserDocument;
+using BricklePlatform.Api.Application.Commands.UserDocumentSignature;
+using BricklePlatform.Api.Application.Queries.UserDocumentSignature;
 
 
 namespace BricklePlatform.Api.Controllers;
@@ -1008,6 +1010,59 @@ public class UserController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error al actualizar estado del documento - CorrelationId: {CorrelationId}", header.CorrelationId);
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Registra la firma electrónica en pantalla de un usuario sobre un documento legal
+    /// (contrato de colaboración empresarial, declaración de origen de fondos, etc.)
+    /// que no se sirve como PDF externo.
+    /// </summary>
+    /// <param name="header">Cabecera con CorrelationId.</param>
+    /// <param name="request">Tipo de documento, versión, firmante y trazos de la firma.</param>
+    /// <returns>La evidencia de firma registrada.</returns>
+    [HttpPost("document-signatures")]
+    [ProducesResponseType(StatusCodes.Status201Created, Type = typeof(UserDocumentSignatureDto))]
+    public async Task<IActionResult> SignDocument(
+        [FromHeaderModel] HeaderRequestModel header,
+        [FromBody] SignUserDocumentRequestDto request)
+    {
+        try
+        {
+            var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+            var command = new SignUserDocumentCommand(header, request, ipAddress);
+            var result = await _mediator.Send(command);
+            return StatusCode(StatusCodes.Status201Created, result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al registrar firma de documento - CorrelationId: {CorrelationId}", header.CorrelationId);
+            return BadRequest(new { error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Obtiene las firmas electrónicas de documentos legales de un usuario.
+    /// </summary>
+    /// <param name="header">Cabecera con CorrelationId.</param>
+    /// <param name="userId">ID del usuario.</param>
+    /// <returns>Lista de firmas registradas.</returns>
+    [HttpGet("{userId}/document-signatures")]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IEnumerable<UserDocumentSignatureDto>))]
+    public async Task<IActionResult> GetDocumentSignatures(
+        [FromHeaderModel] HeaderRequestModel header,
+        [FromRoute] Guid userId)
+    {
+        try
+        {
+            var query = new GetUserDocumentSignaturesQuery(header, userId);
+            var result = await _mediator.Send(query);
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al obtener firmas de documentos - CorrelationId: {CorrelationId}", header.CorrelationId);
             return BadRequest(new { error = ex.Message });
         }
     }

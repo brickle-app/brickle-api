@@ -22,6 +22,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<Investment> Investments { get; set; }
     public DbSet<UserBankAccount> UserBankAccounts { get; set; }
     public DbSet<UserDocument> UserDocuments { get; set; }
+    public DbSet<UserDocumentSignature> UserDocumentSignatures { get; set; }
     public DbSet<WalletBackup> WalletBackups { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -36,6 +37,7 @@ public class ApplicationDbContext : DbContext
         modelBuilder.ApplyConfiguration(new InvestmentConfiguration());
         modelBuilder.ApplyConfiguration(new UserBankAccountConfiguration());
         modelBuilder.ApplyConfiguration(new UserDocumentConfiguration());
+        modelBuilder.ApplyConfiguration(new UserDocumentSignatureConfiguration());
         modelBuilder.ApplyConfiguration(new WalletBackupConfiguration());
 
         modelBuilder.Entity<User>().ToTable("User", schema: "dbo");
@@ -48,6 +50,7 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<Investment>().ToTable("Investment", schema: "dbo");
         modelBuilder.Entity<UserBankAccount>().ToTable("UserBankAccount", schema: "dbo");
         modelBuilder.Entity<UserDocument>().ToTable("UserDocument", schema: "dbo");
+        modelBuilder.Entity<UserDocumentSignature>().ToTable("UserDocumentSignature", schema: "dbo");
         modelBuilder.Entity<WalletBackup>().ToTable("WalletBackup", schema: "dbo");
 
         base.OnModelCreating(modelBuilder);

@@ -33,7 +33,9 @@ public class UserDocumentConfiguration : IEntityTypeConfiguration<UserDocument>
 
         builder.Property(d => d.DocumentUrl)
             .IsRequired(false)
-            .HasMaxLength(500)
+            // nvarchar(max): las URLs de blobs firmadas (SAS token) pueden superar
+            // ampliamente los 500 caracteres y provocaban truncamiento en el INSERT.
+            .HasColumnType("nvarchar(max)")
             .HasColumnName("document_url");
 
         builder.Property(d => d.Status)
