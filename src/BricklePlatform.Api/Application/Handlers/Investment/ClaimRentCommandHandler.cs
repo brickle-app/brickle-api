@@ -132,7 +132,7 @@ public class ClaimRentCommandHandler : IRequestHandler<ClaimRentCommand, bool>
         return false;
     }
 
-    private record RentSplit(decimal Interest, decimal Capital, bool HasSplit);
+    private record RentSplit(decimal Interest, decimal Capital, decimal Fee, decimal Retention, bool HasSplit);
 
     private RentSplit CalculateCapitalInterestSplit(
         Domain.Entities.Investment investment,
@@ -152,7 +152,7 @@ public class ClaimRentCommandHandler : IRequestHandler<ClaimRentCommand, bool>
             _logger.LogWarning(
                 "Cannot split rent (missing agreement data). Falling back to legacy INVESTMENT-RETURN. LeasingId={LeasingId}",
                 investment.LeasingId);
-            return new RentSplit(Interest: totalTxAmount, Capital: 0m, HasSplit: false);
+            return new RentSplit(Interest: totalTxAmount, Capital: 0m, Fee: 0m, Retention: 0m, HasSplit: false);
         }
 
         var monthlyRate = agreement.InstallmentRate / 100m;
@@ -161,6 +161,11 @@ public class ClaimRentCommandHandler : IRequestHandler<ClaimRentCommand, bool>
         var managementFeeMonthly = agreement.ManagementFee > 0
             ? agreement.ManagementFee / 100m / 12m
             : 0m;
+        // Retención (ReteFuente + ReteICA) sobre el interés neto de fee de administración,
+        // consistente con la práctica contable colombiana de aplicar la retención sobre la
+        // base gravable del rendimiento, no sobre el capital amortizado.
+        var retentionRate = (agreement.ReteFuentePct + agreement.ReteIcaPct) / 100m;
+        if (retentionRate < 0) retentionRate = 0m;
 
         var currentAssetValue = agreement.AssetValue;
         for (int m = 0; m < previousPaymentCount; m++)
@@ -173,6 +178,8 @@ public class ClaimRentCommandHandler : IRequestHandler<ClaimRentCommand, bool>
 
         decimal totalInterestUser = 0m;
         decimal totalCapitalUser = 0m;
+        decimal totalFeeUser = 0m;
+        decimal totalRetentionUser = 0m;
 
         for (int m = 0; m < installmentsInClaim; m++)
         {
@@ -181,11 +188,15 @@ public class ClaimRentCommandHandler : IRequestHandler<ClaimRentCommand, bool>
 
             var grossInterest = currentAssetValue * monthlyRate;
             var brickleInterest = currentAssetValue * managementFeeMonthly;
-            var tokenHolderInterest = grossInterest - brickleInterest;
+            var interestAfterFee = grossInterest - brickleInterest;
+            var retentionAmount = interestAfterFee * retentionRate;
+            var tokenHolderInterest = interestAfterFee - retentionAmount;
             var capitalPayment = canon - grossInterest;
 
             totalInterestUser += tokenHolderInterest * userShare;
             totalCapitalUser += capitalPayment * userShare;
+            totalFeeUser += brickleInterest * userShare;
+            totalRetentionUser += retentionAmount * userShare;
 
             currentAssetValue -= capitalPayment;
             if (currentAssetValue < 0) currentAssetValue = 0;
@@ -193,13 +204,15 @@ public class ClaimRentCommandHandler : IRequestHandler<ClaimRentCommand, bool>
 
         var calculated = totalInterestUser + totalCapitalUser;
         if (calculated <= 0)
-            return new RentSplit(Interest: totalTxAmount, Capital: 0m, HasSplit: false);
+            return new RentSplit(Interest: totalTxAmount, Capital: 0m, Fee: 0m, Retention: 0m, HasSplit: false);
 
         // El capital devuelto en el smart contract es íntegro (no tiene retenciones ni impuestos).
-        // Las retenciones solo aplican al interés. Por tanto, el capitalFinal es exactamente el simulado.
+        // Las retenciones y el fee solo aplican al interés. Por tanto, el capitalFinal es exactamente
+        // el simulado.
         var capitalFinal = Math.Round(totalCapitalUser, 2);
-        
-        // El interés final es el remanente del TxAmount que recibió el usuario on-chain.
+
+        // El interés final es el remanente del TxAmount que recibió el usuario on-chain (ya neto de
+        // fee y retención, deducidos antes de que el contrato transfiriera los fondos).
         var interestFinal = totalTxAmount - capitalFinal;
 
         // Salvaguarda (edge case): si on-chain se recibió menos dinero que el capital teórico,
@@ -210,7 +223,15 @@ public class ClaimRentCommandHandler : IRequestHandler<ClaimRentCommand, bool>
             interestFinal = 0m;
         }
 
-        return new RentSplit(Interest: interestFinal, Capital: capitalFinal, HasSplit: true);
+        // Fee y retención son informativos: reescalamos la simulación teórica (fee + retención +
+        // interés neto = interés bruto simulado) para que sea proporcional al interés que realmente
+        // llegó on-chain, sin alterar el monto total que el usuario recibió.
+        var theoreticalNetInterest = totalInterestUser;
+        var scale = theoreticalNetInterest > 0 ? interestFinal / theoreticalNetInterest : 0m;
+        var feeFinal = Math.Round(totalFeeUser * scale, 2);
+        var retentionFinal = Math.Round(totalRetentionUser * scale, 2);
+
+        return new RentSplit(Interest: interestFinal, Capital: capitalFinal, Fee: feeFinal, Retention: retentionFinal, HasSplit: true);
     }
 
     private async Task LogRentClaimAsync(
@@ -267,6 +288,43 @@ public class ClaimRentCommandHandler : IRequestHandler<ClaimRentCommand, bool>
                 Receipt = "",
                 Hash = txHash,
                 Reference = $"{reference} [Capital]",
+                LeasingId = leasingId,
+                Timestamp = DateTime.UtcNow
+            });
+        }
+
+        // Log 3 — Fee de Brickle deducido del rendimiento (informativo: monto NEGATIVO, ya descontado
+        // antes de que el interés llegara a la wallet on-chain; no se suma de nuevo al efectivo/balance,
+        // solo sirve para mostrarlo al usuario como línea de gasto en el historial de movimientos).
+        if (split.Fee > 0)
+        {
+            await _userActivityLogService.LogUserActivityAsync(new UserActivityLogDto
+            {
+                UserId = userId,
+                Type = "INVESTMENT-RETURN-FEE",
+                TxAmount = -split.Fee,
+                Status = "SUCCESS",
+                Receipt = "",
+                Hash = txHash,
+                Reference = $"{reference} [Fee Brickle]",
+                LeasingId = leasingId,
+                Timestamp = DateTime.UtcNow
+            });
+        }
+
+        // Log 4 — Retención (ReteFuente + ReteICA) deducida del rendimiento (informativo, mismo criterio
+        // que el fee: monto negativo, ya descontado del interés que llegó on-chain).
+        if (split.Retention > 0)
+        {
+            await _userActivityLogService.LogUserActivityAsync(new UserActivityLogDto
+            {
+                UserId = userId,
+                Type = "INVESTMENT-RETURN-WITHHOLDING",
+                TxAmount = -split.Retention,
+                Status = "SUCCESS",
+                Receipt = "",
+                Hash = txHash,
+                Reference = $"{reference} [Retenciones]",
                 LeasingId = leasingId,
                 Timestamp = DateTime.UtcNow
             });
