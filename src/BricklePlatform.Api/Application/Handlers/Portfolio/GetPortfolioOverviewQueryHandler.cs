@@ -33,6 +33,12 @@ namespace BricklePlatform.Api.Application.Handlers.Portfolio
             var investments = await _investmentRepository.GetByUserIdAsync(request.UserId);
             var investmentsList = investments.ToList();
 
+            if (!investmentsList.Any())
+            {
+                _logger.LogInformation("No se encontraron inversiones para el usuario: {UserId}", request.UserId);
+                return CreateEmptyPortfolioOverview(request.To);
+            }
+
             var logWindowDays = Math.Max(730, (request.To.DayNumber - request.From.DayNumber) + 60);
             var allLogs = (await _userActivityLogService.GetUserActivityLogsAsync(
                 request.UserId,
@@ -61,12 +67,6 @@ namespace BricklePlatform.Api.Application.Handlers.Portfolio
             var returnLogs = allLogs
                 .Where(log => IsAnyReturnType(log.Type))
                 .ToList();
-
-            if (!investmentsList.Any())
-            {
-                _logger.LogInformation("No se encontraron inversiones para el usuario: {UserId}", request.UserId);
-                return CreateEmptyPortfolioOverview(request.To);
-            }
 
             var merged = MergeInvestmentsPerLeasing(investmentsList);
             var tokenSupplyByLeasingId = await ResolveTokenSupplyByLeasingAsync(merged, cancellationToken).ConfigureAwait(false);

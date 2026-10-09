@@ -79,7 +79,12 @@ public class AzureTableStorageBase<T> where T : class, ITableEntity, new()
 
     public async Task<IEnumerable<T>> QueryAllAsync(string partitionKey)
     {
-        AsyncPageable<T> queryResults = tableClient.QueryAsync<T>(filter: $"PartitionKey eq '{partitionKey}'");
+        return await QueryByFilterAsync($"PartitionKey eq '{partitionKey}'");
+    }
+
+    protected async Task<IEnumerable<T>> QueryByFilterAsync(string filter)
+    {
+        AsyncPageable<T> queryResults = tableClient.QueryAsync<T>(filter: filter);
         List<T> results = new List<T>();
 
         await foreach (T entity in queryResults)

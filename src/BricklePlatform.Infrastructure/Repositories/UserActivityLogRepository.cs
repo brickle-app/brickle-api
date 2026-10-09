@@ -14,6 +14,7 @@ public class UserActivityLogRepository : AzureTableStorageBase<UserActivityLogEn
 {
     private readonly ILogger<UserActivityLogRepository> _logger;
     private readonly string tableName;
+    private const int MaxConcurrentPartitionQueries = 16;
 
     public UserActivityLogRepository(
         IOptions<InfrastructureSettings> settings,
@@ -68,18 +69,7 @@ public class UserActivityLogRepository : AzureTableStorageBase<UserActivityLogEn
         try
         {
             var entities = await QueryAllAsync(partitionKey);
-            var result = entities.Select(entity => new UserActivityLogDto
-                {
-                    UserId = Guid.Parse(entity.UserId),
-                    Type = entity.Type,
-                    TxAmount = (decimal)entity.TxAmount,
-                    Status = entity.Status,
-                    Receipt = entity.Receipt,
-                    Hash = entity.Hash,
-                    Reference = entity.Reference,
-                    LeasingId = string.IsNullOrEmpty(entity.LeasingId) ? null : Guid.Parse(entity.LeasingId),
-                    Timestamp = ResolveLogTimestamp(entity)
-                }).OrderByDescending(x => x.Timestamp);
+            var result = entities.Select(MapToDto).OrderByDescending(x => x.Timestamp);
             
             return result;
         }
@@ -94,22 +84,33 @@ public class UserActivityLogRepository : AzureTableStorageBase<UserActivityLogEn
     {
         try
         {
-            List<UserActivityLogDto> allLogs = new();
             DateTime endDate = DateTime.UtcNow;
             DateTime startDate = endDate.AddDays(-daysBack);
 
-            // Query each day's partition to find logs for the specific user
+            // One partition per day: query them concurrently and let the server filter by user,
+            // instead of downloading every user's logs for every day sequentially.
+            var days = new List<DateTime>();
             for (DateTime date = startDate.Date; date <= endDate.Date; date = date.AddDays(1))
+                days.Add(date);
+
+            using var throttle = new SemaphoreSlim(MaxConcurrentPartitionQueries);
+            var perDay = await Task.WhenAll(days.Select(async date =>
             {
-                string dateString = date.ToString("ddMMyyyy");
-                string partitionKey = Convert.ToBase64String(Encoding.UTF8.GetBytes(dateString));
+                await throttle.WaitAsync();
+                try
+                {
+                    string partitionKey = Convert.ToBase64String(Encoding.UTF8.GetBytes(date.ToString("ddMMyyyy")));
+                    var entities = await QueryByFilterAsync(
+                        $"PartitionKey eq '{partitionKey}' and UserId eq '{userId}'");
+                    return entities.Select(MapToDto).ToList();
+                }
+                finally
+                {
+                    throttle.Release();
+                }
+            }));
 
-                var dailyLogs = await GetUserActivityLogsByDateAsync(partitionKey);
-                var userLogs = dailyLogs.Where(log => log.UserId == userId);
-                allLogs.AddRange(userLogs);
-            }
-
-            return allLogs.OrderByDescending(log => log.Timestamp); // Order by most recent first
+            return perDay.SelectMany(logs => logs).OrderByDescending(log => log.Timestamp); // Order by most recent first
         }
         catch (Exception ex)
         {
@@ -117,6 +118,19 @@ public class UserActivityLogRepository : AzureTableStorageBase<UserActivityLogEn
             throw;
         }
     }
+
+    private static UserActivityLogDto MapToDto(UserActivityLogEntity entity) => new()
+    {
+        UserId = Guid.Parse(entity.UserId),
+        Type = entity.Type,
+        TxAmount = (decimal)entity.TxAmount,
+        Status = entity.Status,
+        Receipt = entity.Receipt,
+        Hash = entity.Hash,
+        Reference = entity.Reference,
+        LeasingId = string.IsNullOrEmpty(entity.LeasingId) ? null : Guid.Parse(entity.LeasingId),
+        Timestamp = ResolveLogTimestamp(entity)
+    };
 
     private static DateTime ResolveEventUtc(DateTime dtoTimestamp)
     {
