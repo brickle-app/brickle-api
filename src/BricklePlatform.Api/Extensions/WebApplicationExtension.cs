@@ -52,6 +52,7 @@ public static class WebApplicationExtension
         app.UseAuthentication();
         app.UseAuthorization();
         app.MapControllers();
+        MapHealthEndpoints(app);
         app.UseSwagger();
 
         app.UseSwaggerUI(c =>
@@ -97,5 +98,33 @@ public static class WebApplicationExtension
         }
 
         return app;
+    }
+
+    /// <summary>
+    /// Unauthenticated probes: <c>/health</c> only proves the process is up, <c>/health/ready</c> also checks the database.
+    /// </summary>
+    private static void MapHealthEndpoints(WebApplication app)
+    {
+        app.MapGet("/health", () => Results.Ok(new { status = "ok" }))
+            .AllowAnonymous()
+            .ExcludeFromDescription();
+
+        app.MapGet("/health/ready", async (ApplicationDbContext dbContext, CancellationToken cancellationToken) =>
+            {
+                bool databaseReachable;
+                try
+                {
+                    databaseReachable = await dbContext.Database.CanConnectAsync(cancellationToken);
+                }
+                catch
+                {
+                    databaseReachable = false;
+                }
+
+                var body = new { status = databaseReachable ? "ready" : "degraded", database = databaseReachable ? "up" : "down" };
+                return databaseReachable ? Results.Ok(body) : Results.Json(body, statusCode: StatusCodes.Status503ServiceUnavailable);
+            })
+            .AllowAnonymous()
+            .ExcludeFromDescription();
     }
 }
