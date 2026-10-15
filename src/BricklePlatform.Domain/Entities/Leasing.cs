@@ -145,7 +145,8 @@ public class Leasing
         List<AssetDetail>? details = null,
         decimal reteIcaPct = 0,
         decimal reteFuentePct = 0,
-        Guid? companyId = null)
+        Guid? companyId = null,
+        bool? active = null)
     {
         if (string.IsNullOrWhiteSpace(name))
             throw new ArgumentException("Name cannot be empty", nameof(name));
@@ -187,6 +188,8 @@ public class Leasing
         ReteIcaPct = reteIcaPct;
         ReteFuentePct = reteFuentePct;
         CompanyId = companyId;
+        if (active.HasValue)
+            Active = active.Value;
         UpdatedAt = DateTime.UtcNow;
     }
 

@@ -54,6 +54,11 @@ public class GetAllLeasingsQueryHandler : IRequestHandler<GetAllLeasingsQuery, I
                 Active = leasing.Active,
                 CreatedAt = leasing.CreatedAt,
                 UpdatedAt = leasing.UpdatedAt,
+                Details = leasing.Details?.Select(d => new AssetDetailDto
+                {
+                    Title = d.Title,
+                    Value = d.Value
+                }).ToList(),
                 Agreement = agreement != null ? new UserLeasingAgreementInfoDto
                 {
                     Id = agreement.Id,

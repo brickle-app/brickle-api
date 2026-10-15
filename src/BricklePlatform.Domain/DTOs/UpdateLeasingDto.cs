@@ -22,5 +22,7 @@ public class UpdateLeasingDto
     public decimal ReteIcaPct { get; set; }
     public decimal ReteFuentePct { get; set; }
     public Guid? CompanyId { get; set; }
+    // Nullable so clients that omit it don't deactivate the leasing by accident
+    public bool? Active { get; set; }
     public List<AssetDetailDto>? Details { get; set; }
 }

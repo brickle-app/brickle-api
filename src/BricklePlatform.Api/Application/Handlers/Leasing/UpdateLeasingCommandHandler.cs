@@ -51,7 +51,8 @@ public class UpdateLeasingCommandHandler : IRequestHandler<UpdateLeasingCommand,
             }).ToList(),
             request.LeasingDto.ReteIcaPct,
             request.LeasingDto.ReteFuentePct,
-            request.LeasingDto.CompanyId
+            request.LeasingDto.CompanyId,
+            request.LeasingDto.Active
         );
 
         await _leasingRepository.UpdateAsync(leasing);
