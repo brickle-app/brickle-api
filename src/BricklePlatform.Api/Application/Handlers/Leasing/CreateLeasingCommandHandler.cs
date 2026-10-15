@@ -1,6 +1,7 @@
 using BricklePlatform.Api.Application.Commands.Leasing;
 using BricklePlatform.Domain.Interfaces;
 using BricklePlatform.Domain.DTOs;
+using FluentValidation;
 using MediatR;
 
 namespace BricklePlatform.Api.Application.Handlers.Leasing;
@@ -8,14 +9,20 @@ namespace BricklePlatform.Api.Application.Handlers.Leasing;
 public class CreateLeasingCommandHandler : IRequestHandler<CreateLeasingCommand, LeasingDto>
 {
     private readonly ILeasingRepository _leasingRepository;
+    private readonly ICompanyRepository _companyRepository;
 
-    public CreateLeasingCommandHandler(ILeasingRepository leasingRepository)
+    public CreateLeasingCommandHandler(ILeasingRepository leasingRepository, ICompanyRepository companyRepository)
     {
         _leasingRepository = leasingRepository;
+        _companyRepository = companyRepository;
     }
 
     public async Task<LeasingDto> Handle(CreateLeasingCommand request, CancellationToken cancellationToken)
     {
+        if (request.LeasingDto.CompanyId.HasValue &&
+            await _companyRepository.GetByIdAsync(request.LeasingDto.CompanyId.Value) == null)
+            throw new ValidationException($"Empresa con id {request.LeasingDto.CompanyId} no encontrada");
+
         int tokensAvailable = request.LeasingDto.TokensAvailable > 0
             ? request.LeasingDto.TokensAvailable
             : request.LeasingDto.Tokens;
@@ -43,7 +50,8 @@ public class CreateLeasingCommandHandler : IRequestHandler<CreateLeasingCommand,
                 Value = d.Value
             }).ToList(),
             request.LeasingDto.ReteIcaPct,
-            request.LeasingDto.ReteFuentePct
+            request.LeasingDto.ReteFuentePct,
+            request.LeasingDto.CompanyId
         );
 
         Domain.Entities.Leasing createdLeasing = await _leasingRepository.CreateAsync(leasing);
@@ -60,6 +68,7 @@ public class CreateLeasingCommandHandler : IRequestHandler<CreateLeasingCommand,
             TIR = createdLeasing.TIR,
             ReteIcaPct = createdLeasing.ReteIcaPct,
             ReteFuentePct = createdLeasing.ReteFuentePct,
+            CompanyId = createdLeasing.CompanyId,
             Description = createdLeasing.Description,
             Type = createdLeasing.Type.ToString(),
             ContractTime = createdLeasing.ContractTime,

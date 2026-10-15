@@ -62,6 +62,7 @@ public class GetLeasingsByGroupCategoryQueryHandler : IRequestHandler<GetLeasing
                 TIR = leasing.TIR,
                 ReteIcaPct = leasing.ReteIcaPct,
                 ReteFuentePct = leasing.ReteFuentePct,
+                CompanyId = leasing.CompanyId,
                 Active = leasing.Active,
                 CreatedAt = leasing.CreatedAt,
                 UpdatedAt = leasing.UpdatedAt,

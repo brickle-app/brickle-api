@@ -2,6 +2,7 @@ using BricklePlatform.Api.Application.Commands.Leasing;
 using BricklePlatform.Domain.DTOs;
 using BricklePlatform.Domain.Exceptions;
 using BricklePlatform.Domain.Interfaces;
+using FluentValidation;
 using MediatR;
 
 namespace BricklePlatform.Api.Application.Handlers.Leasing;
@@ -9,14 +10,20 @@ namespace BricklePlatform.Api.Application.Handlers.Leasing;
 public class UpdateLeasingCommandHandler : IRequestHandler<UpdateLeasingCommand, LeasingDto>
 {
     private readonly ILeasingRepository _leasingRepository;
+    private readonly ICompanyRepository _companyRepository;
 
-    public UpdateLeasingCommandHandler(ILeasingRepository leasingRepository)
+    public UpdateLeasingCommandHandler(ILeasingRepository leasingRepository, ICompanyRepository companyRepository)
     {
         _leasingRepository = leasingRepository;
+        _companyRepository = companyRepository;
     }
 
     public async Task<LeasingDto> Handle(UpdateLeasingCommand request, CancellationToken cancellationToken)
     {
+        if (request.LeasingDto.CompanyId.HasValue &&
+            await _companyRepository.GetByIdAsync(request.LeasingDto.CompanyId.Value) == null)
+            throw new ValidationException($"Empresa con id {request.LeasingDto.CompanyId} no encontrada");
+
         Domain.Entities.Leasing? leasing = await _leasingRepository.GetByIdAsync(request.Id);
         if (leasing == null)
             throw new NotFoundException($"Leasing con id {request.Id} no encontrado");
@@ -43,7 +50,8 @@ public class UpdateLeasingCommandHandler : IRequestHandler<UpdateLeasingCommand,
                 Value = d.Value
             }).ToList(),
             request.LeasingDto.ReteIcaPct,
-            request.LeasingDto.ReteFuentePct
+            request.LeasingDto.ReteFuentePct,
+            request.LeasingDto.CompanyId
         );
 
         await _leasingRepository.UpdateAsync(leasing);
@@ -60,6 +68,7 @@ public class UpdateLeasingCommandHandler : IRequestHandler<UpdateLeasingCommand,
             TIR = leasing.TIR,
             ReteIcaPct = leasing.ReteIcaPct,
             ReteFuentePct = leasing.ReteFuentePct,
+            CompanyId = leasing.CompanyId,
             Description = leasing.Description,
             Type = leasing.Type.ToString(),
             ContractTime = leasing.ContractTime,

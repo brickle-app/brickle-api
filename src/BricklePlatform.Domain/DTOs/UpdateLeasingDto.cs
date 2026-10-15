@@ -21,5 +21,6 @@ public class UpdateLeasingDto
     public decimal TIR { get; set; }
     public decimal ReteIcaPct { get; set; }
     public decimal ReteFuentePct { get; set; }
+    public Guid? CompanyId { get; set; }
     public List<AssetDetailDto>? Details { get; set; }
 }

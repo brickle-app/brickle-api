@@ -47,6 +47,7 @@ public class Leasing
     public decimal ReteIcaPct { get; private set; }
     public decimal ReteFuentePct { get; private set; }
     public List<AssetDetail>? Details { get; private set; }
+    public Guid? CompanyId { get; private set; }
     public DateTime CreatedAt { get; private set; }
     public DateTime? UpdatedAt { get; private set; }
 
@@ -73,7 +74,8 @@ public class Leasing
         string? leasingContractAddress = null,
         List<AssetDetail>? details = null,
         decimal reteIcaPct = 0,
-        decimal reteFuentePct = 0
+        decimal reteFuentePct = 0,
+        Guid? companyId = null
         )
     {
         if (string.IsNullOrWhiteSpace(name))
@@ -119,6 +121,7 @@ public class Leasing
             Details = details,
             ReteIcaPct = reteIcaPct,
             ReteFuentePct = reteFuentePct,
+            CompanyId = companyId,
             CreatedAt = DateTime.UtcNow
         };
     }
@@ -141,7 +144,8 @@ public class Leasing
         string? leasingContractAddress = null,
         List<AssetDetail>? details = null,
         decimal reteIcaPct = 0,
-        decimal reteFuentePct = 0)
+        decimal reteFuentePct = 0,
+        Guid? companyId = null)
     {
         if (string.IsNullOrWhiteSpace(name))
             throw new ArgumentException("Name cannot be empty", nameof(name));
@@ -182,6 +186,7 @@ public class Leasing
         Details = details;
         ReteIcaPct = reteIcaPct;
         ReteFuentePct = reteFuentePct;
+        CompanyId = companyId;
         UpdatedAt = DateTime.UtcNow;
     }
 

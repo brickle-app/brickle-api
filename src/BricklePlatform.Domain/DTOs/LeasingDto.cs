@@ -26,6 +26,7 @@ public class LeasingDto
     public decimal TIR { get; set; }
     public decimal ReteIcaPct { get; set; }
     public decimal ReteFuentePct { get; set; }
+    public Guid? CompanyId { get; set; }
     public bool Active { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }

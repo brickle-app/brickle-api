@@ -22,5 +22,6 @@ public class CreateLeasingDto
     public bool Active { get; set; } = true;
     public decimal ReteIcaPct { get; set; }
     public decimal ReteFuentePct { get; set; }
+    public Guid? CompanyId { get; set; }
     public List<AssetDetailDto>? Details { get; set; }
 }

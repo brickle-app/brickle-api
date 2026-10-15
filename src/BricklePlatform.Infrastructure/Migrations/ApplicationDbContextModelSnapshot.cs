@@ -208,6 +208,10 @@ namespace BricklePlatform.Infrastructure.Migrations
                         .HasDefaultValue(true)
                         .HasColumnName("active");
 
+                    b.Property<Guid?>("CompanyId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("company_id");
+
                     b.Property<string>("ContractAddress")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)")
@@ -305,6 +309,8 @@ namespace BricklePlatform.Infrastructure.Migrations
                         .HasDefaultValueSql("GETDATE()");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CompanyId");
 
                     b.ToTable("Leasing", "dbo");
                 });
@@ -948,6 +954,14 @@ namespace BricklePlatform.Infrastructure.Migrations
                     b.Navigation("Leasing");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("BricklePlatform.Domain.Entities.Leasing", b =>
+                {
+                    b.HasOne("BricklePlatform.Domain.Entities.Company", null)
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.SetNull);
                 });
 
             modelBuilder.Entity("BricklePlatform.Domain.Entities.UserBankAccount", b =>

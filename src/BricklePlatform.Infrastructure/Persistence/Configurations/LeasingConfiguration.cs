@@ -106,6 +106,14 @@ public class LeasingConfiguration : IEntityTypeConfiguration<Leasing>
                     c => c.Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())),
                     c => c.ToList()));
 
+        builder.Property(l => l.CompanyId)
+            .HasColumnName("company_id");
+
+        builder.HasOne<Company>()
+            .WithMany()
+            .HasForeignKey(l => l.CompanyId)
+            .OnDelete(DeleteBehavior.SetNull);
+
         builder.Property(l => l.CreatedAt)
             .HasColumnName("created_at")
             .IsRequired()

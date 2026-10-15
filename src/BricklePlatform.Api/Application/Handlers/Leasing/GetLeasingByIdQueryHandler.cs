@@ -10,11 +10,16 @@ public class GetLeasingByIdQueryHandler : IRequestHandler<GetLeasingByIdQuery, L
 {
     private readonly ILeasingRepository _leasingRepository;
     private readonly IUserLeasingAgreementRepository _agreementRepository;
+    private readonly ICompanyRepository _companyRepository;
 
-    public GetLeasingByIdQueryHandler(ILeasingRepository leasingRepository, IUserLeasingAgreementRepository agreementRepository)
+    public GetLeasingByIdQueryHandler(
+        ILeasingRepository leasingRepository,
+        IUserLeasingAgreementRepository agreementRepository,
+        ICompanyRepository companyRepository)
     {
         _leasingRepository = leasingRepository;
         _agreementRepository = agreementRepository;
+        _companyRepository = companyRepository;
     }
 
     public async Task<LeasingDto> Handle(GetLeasingByIdQuery request, CancellationToken cancellationToken)
@@ -24,6 +29,13 @@ public class GetLeasingByIdQueryHandler : IRequestHandler<GetLeasingByIdQuery, L
             throw new NotFoundException($"Leasing con id {request.Id} no encontrado");
 
         var agreement = await _agreementRepository.GetByLeasingIdAsync(leasing.Id);
+
+        // La empresa asignada explícitamente al leasing (desde el admin) tiene prioridad; si no hay,
+        // se usa la empresa del arrendatario del acuerdo, como en los leasings creados antes de CompanyId.
+        var company = leasing.CompanyId.HasValue
+            ? await _companyRepository.GetByIdAsync(leasing.CompanyId.Value)
+            : null;
+        company ??= agreement?.User?.Company;
 
         // Debug logging to understand the state
         if (agreement != null)
@@ -64,6 +76,7 @@ public class GetLeasingByIdQueryHandler : IRequestHandler<GetLeasingByIdQuery, L
             TIR = leasing.TIR,
             ReteIcaPct = leasing.ReteIcaPct,
             ReteFuentePct = leasing.ReteFuentePct,
+            CompanyId = leasing.CompanyId,
             Active = leasing.Active,
             CreatedAt = leasing.CreatedAt,
             UpdatedAt = leasing.UpdatedAt,
@@ -72,17 +85,17 @@ public class GetLeasingByIdQueryHandler : IRequestHandler<GetLeasingByIdQuery, L
                 Title = d.Title,
                 Value = d.Value
             }).ToList(),
-            Company = agreement?.User?.Company != null ? new CompanyDto
+            Company = company != null ? new CompanyDto
             {
-                Id = agreement.User.Company.Id,
-                Name = agreement.User.Company.Name,
-                OperationTime = agreement.User.Company.OperationTime,
-                OperationMeasure = agreement.User.Company.OperationMeasure,
-                CreditRating = agreement.User.Company.CreditRating,
-                LeasingContract = agreement.User.Company.LeasingContract,
-                UserId = agreement.User.Company.UserId,
-                CreatedAt = agreement.User.Company.CreatedAt,
-                UpdatedAt = agreement.User.Company.UpdatedAt
+                Id = company.Id,
+                Name = company.Name,
+                OperationTime = company.OperationTime,
+                OperationMeasure = company.OperationMeasure,
+                CreditRating = company.CreditRating,
+                LeasingContract = company.LeasingContract,
+                UserId = company.UserId,
+                CreatedAt = company.CreatedAt,
+                UpdatedAt = company.UpdatedAt
             } : null,
             Agreement = agreement != null ? new UserLeasingAgreementInfoDto
             {
