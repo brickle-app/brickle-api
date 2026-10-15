@@ -24,8 +24,11 @@ namespace BricklePlatform.Api.Validators.Leasing
             RuleFor(x => x.LeasingDto.Tokens)
                 .GreaterThan(0).WithMessage(ValidationMessages.REQUIREDFIELD);
 
+            // 0 is valid: a sold-out leasing has no tokens available but must still be editable
             RuleFor(x => x.LeasingDto.TokensAvailable)
-                .GreaterThan(0).WithMessage(ValidationMessages.REQUIREDFIELD);
+                .GreaterThanOrEqualTo(0).WithMessage(ValidationMessages.REQUIREDFIELD)
+                .Must((cmd, val) => val <= cmd.LeasingDto.Tokens)
+                .WithMessage("TokensAvailable no puede ser mayor que Tokens.");
 
             RuleFor(x => x.LeasingDto.PricePerToken)
                 .GreaterThan(0).WithMessage(ValidationMessages.REQUIREDFIELD);

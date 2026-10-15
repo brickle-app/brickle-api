@@ -37,25 +37,6 @@ public class GetLeasingByIdQueryHandler : IRequestHandler<GetLeasingByIdQuery, L
             : null;
         company ??= agreement?.User?.Company;
 
-        // Debug logging to understand the state
-        if (agreement != null)
-        {
-            Console.WriteLine($"Agreement found: UserId={agreement.UserId}");
-            Console.WriteLine($"User loaded: {agreement.User != null}");
-            if (agreement.User != null)
-            {
-                Console.WriteLine($"User Company loaded: {agreement.User.Company != null}");
-                if (agreement.User.Company != null)
-                {
-                    Console.WriteLine($"Company ID: {agreement.User.Company.Id}, Name: {agreement.User.Company.Name}");
-                }
-            }
-        }
-        else
-        {
-            Console.WriteLine("No agreement found for this leasing");
-        }
-
         return new LeasingDto
         {
             Id = leasing.Id,
